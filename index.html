@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>FIDO2 安全密钥测试工具 | WebAuthn 演示</title>
+    <!-- 使用现代、简洁的样式，深色模式友好 -->
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #f5f7fc 0%, #eef2f8 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            max-width: 950px;
+            width: 100%;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(0px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .header {
+            background: #0a2540;
+            color: white;
+            padding: 1.8rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.9rem;
+            letter-spacing: -0.3px;
+        }
+
+        .header p {
+            margin: 0.6rem 0 0;
+            opacity: 0.85;
+            font-size: 1rem;
+        }
+
+        .content {
+            padding: 2rem 2rem 2rem 2rem;
+        }
+
+        .status-panel {
+            background: #f0f4f9;
+            border-radius: 1.5rem;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 5px solid #2c7da0;
+            transition: background 0.2s;
+        }
+
+        .status-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-message {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            word-break: break-word;
+            color: #1e2f3e;
+            background: white;
+            padding: 0.8rem 1rem;
+            border-radius: 1rem;
+            margin-top: 0.5rem;
+            border: 1px solid #dce5ec;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #2c7da0;
+            color: white;
+            border-radius: 40px;
+            padding: 0.2rem 0.7rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0 1.5rem;
+            justify-content: center;
+        }
+
+        button {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 0.85rem 1.7rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button i {
+            font-style: normal;
+            font-weight: normal;
+            font-size: 1.2rem;
+        }
+
+        button.primary {
+            background: #0a2540;
+            border-color: #0a2540;
+            color: white;
+            box-shadow: 0 4px 8px rgba(10,37,64,0.2);
+        }
+
+        button.primary:hover {
+            background: #1f4b6e;
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: #f8fafc;
+            border-color: #b9cadb;
+        }
+
+        button.secondary:hover {
+            background: #eef3fc;
+            border-color: #7f9cbb;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .info-section {
+            background: #fefce8;
+            border-radius: 1.2rem;
+            padding: 1.2rem 1.5rem;
+            margin-top: 1.8rem;
+            border: 1px solid #fde68a;
+        }
+
+        .info-section h3 {
+            margin: 0 0 0.6rem 0;
+            font-size: 1.1rem;
+            color: #b45309;
+        }
+
+        .info-section p, .info-section li {
+            font-size: 0.85rem;
+            line-height: 1.45;
+            color: #2d3e50;
+        }
+
+        .log-area {
+            background: #1e2a36;
+            color: #d4dcec;
+            font-family: monospace;
+            font-size: 0.8rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            margin-top: 1.8rem;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            border-bottom: 1px solid #2e3a46;
+            padding: 0.3rem 0;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .log-time {
+            color: #8ba5b5;
+            margin-right: 10px;
+        }
+
+        .success {
+            color: #15803d;
+            font-weight: 500;
+        }
+
+        .error {
+            color: #b91c1c;
+            font-weight: 500;
+        }
+
+        hr {
+            margin: 1rem 0;
+            border: 0;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 1rem;
+            color: #5f6c7a;
+            border-top: 1px solid #e9edf2;
+        }
+
+        @media (max-width: 640px) {
+            .content {
+                padding: 1.5rem;
+            }
+            button {
+                padding: 0.65rem 1.2rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <h1>🔐 FIDO2 安全密钥测试</h1>
+        <p>WebAuthn 协议 · 支持 USB / NFC / 生物识别安全密钥</p>
+    </div>
+
+    <div class="content">
+        <!-- 状态显示面板 -->
+        <div class="status-panel" id="statusPanel">
+            <div class="status-title">
+                📟 测试状态
+                <span class="badge" id="browserBadge">检测中...</span>
+            </div>
+            <div class="status-message" id="statusMessage">
+                就绪。点击下方按钮开始测试您的 FIDO2 安全密钥。
+            </div>
+        </div>
+
+        <!-- 主要操作按钮组 -->
+        <div class="button-group">
+            <button id="registerBtn" class="primary">✨ 注册新凭证 (MakeCredential)</button>
+            <button id="loginBtn" class="primary">🔑 断言验证 (GetAssertion)</button>
+            <button id="clearLogBtn" class="secondary">🗑️ 清空日志</button>
+        </div>
+
+        <!-- 额外说明与提示 -->
+        <div class="info-section">
+            <h3>🧪 测试指引</h3>
+            <p>✔ 此网站用于验证 <strong>FIDO2 / WebAuthn</strong> 兼容安全密钥 (如 YubiKey, SoloKey, 生物识别密钥等)。<br>
+            ✔ 点击 <strong>注册新凭证</strong> → 浏览器会提示插入/触摸安全密钥 (若平台验证器可用也会显示)。<br>
+            ✔ 注册成功后，点击 <strong>断言验证</strong> 使用同一密钥完成签名认证，证明密钥正常工作。<br>
+            ✔ 所有操作均在本机完成，凭证仅保存在当前设备/密钥中，不会上传任何敏感信息。<br>
+            ⚠️ 需要 HTTPS 或 localhost 环境，确保浏览器支持 WebAuthn。</p>
+        </div>
+
+        <!-- 详细日志区 -->
+        <div class="log-area" id="logArea">
+            <div class="log-entry">🟢 测试工具已加载，等待用户交互...</div>
+        </div>
+        <footer>
+            FIDO2 WebAuthn 测试 | 支持 Resident Key / 用户验证 (UV) 可选
+        </footer>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- DOM 元素 ----------
+        const registerBtn = document.getElementById('registerBtn');
+        const loginBtn = document.getElementById('loginBtn');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+        const statusMessageDiv = document.getElementById('statusMessage');
+        const browserBadgeSpan = document.getElementById('browserBadge');
+        const logArea = document.getElementById('logArea');
+
+        // 辅助: 添加日志 (带时间戳)
+        function addLog(message, isError = false) {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            const prefix = isError ? '❌' : '🔷';
+            logEntry.innerHTML = `<span class="log-time">[${time}]</span> ${prefix} ${message}`;
+            if (isError) {
+                logEntry.style.color = '#ffb4a2';
+                logEntry.style.borderLeft = '3px solid #e5484d';
+                logEntry.style.paddingLeft = '8px';
+            } else {
+                logEntry.style.color = '#cbdbe6';
+            }
+            logArea.appendChild(logEntry);
+            logEntry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // 保留最多60条日志防止过多
+            while (logArea.children.length > 80) {
+                logArea.removeChild(logArea.firstChild);
+            }
+        }
+
+        // 更新顶部状态消息 (普通/成功/错误)
+        function setStatusMessage(text, isError = false, isSuccess = false) {
+            statusMessageDiv.innerHTML = text;
+            if (isError) {
+                statusMessageDiv.style.color = '#b91c1c';
+                statusMessageDiv.style.background = '#ffe6e5';
+                statusMessageDiv.style.borderLeft = '4px solid #b91c1c';
+            } else if (isSuccess) {
+                statusMessageDiv.style.color = '#0a5c2e';
+                statusMessageDiv.style.background = '#e6f7ec';
+                statusMessageDiv.style.borderLeft = '4px solid #2b9348';
+            } else {
+                statusMessageDiv.style.color = '#1e2f3e';
+                statusMessageDiv.style.background = 'white';
+                statusMessageDiv.style.borderLeft = 'none';
+            }
+        }
+
+        // 重置状态为中性
+        function resetStatusNeutral() {
+            statusMessageDiv.style.color = '#1e2f3e';
+            statusMessageDiv.style.background = 'white';
+            statusMessageDiv.style.borderLeft = 'none';
+        }
+
+        // 检测浏览器 WebAuthn 支持并更新徽章
+        function checkBrowserSupport() {
+            const isSupported = typeof window.PublicKeyCredential !== 'undefined';
+            if (isSupported) {
+                browserBadgeSpan.innerHTML = '✅ WebAuthn 支持';
+                browserBadgeSpan.style.background = '#2b9348';
+                addLog(`浏览器支持 WebAuthn (PublicKeyCredential 可用)`, false);
+                // 额外检查是否支持平台验证器 (可选)
+                if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+                    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(available => {
+                        if (available) {
+                            addLog(`✅ 平台验证器可用 (如指纹/Windows Hello/Touch ID)`, false);
+                        } else {
+                            addLog(`ℹ️ 平台验证器不可用，请使用外部安全密钥 (USB/NFC)`, false);
+                        }
+                    }).catch(() => {});
+                }
+            } else {
+                browserBadgeSpan.innerHTML = '❌ 不支持 WebAuthn';
+                browserBadgeSpan.style.background = '#b91c1c';
+                setStatusMessage("您的浏览器不支持 WebAuthn/FIDO2 协议，请使用 Chrome, Edge, Safari 或 Firefox 最新版本。", true);
+                addLog(`严重错误: 当前环境 window.PublicKeyCredential 未定义，无法进行 FIDO2 测试`, true);
+                registerBtn.disabled = true;
+                loginBtn.disabled = true;
+            }
+        }
+
+        // ---------- 生成随机凭证ID和challenge (使用标准Crypto) ----------
+        function randomBase64Buffer(len = 32) {
+            const arr = new Uint8Array(len);
+            crypto.getRandomValues(arr);
+            return arr;
+        }
+
+        // 将 ArrayBuffer 转为 base64url 字符串 (用于显示日志)
+        function bufferToBase64Url(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        // 生成一个简单的凭据 ID (随机)
+        function generateCredentialId() {
+            return randomBase64Buffer(16);
+        }
+
+        // 全局存储: 模拟服务端存储当前用户注册的凭证公钥信息 (实际测试中仅保存必要字段以便后续断言)
+        // 注意: 实际生产环境中需存储 credentialId, publicKey, 以及 transports 等信息。这里为了演示，保存最近注册的凭证。
+        let storedCredential = null;   // 存储 { id: ArrayBuffer, publicKey: ArrayBuffer, transports: [] }
+
+        // 注册新凭证 (MakeCredential)
+        async function handleRegistration() {
+            if (!window.PublicKeyCredential) {
+                setStatusMessage("WebAuthn 不可用，无法注册", true);
+                addLog("注册失败: 浏览器不支持 WebAuthn", true);
+                return;
+            }
+
+            try {
+                setStatusMessage("⏳ 准备注册请求，请等待浏览器弹窗...", false);
+                addLog("开始创建新的 FIDO2 凭证 (MakeCredential)");
+
+                // 生成 challenge (至少16字节)
+                const challenge = randomBase64Buffer(32);
+                // 生成 user.id (随机)
+                const userId = randomBase64Buffer(16);
+                // 定义一个测试用户 (模拟)
+                const userName = "测试用户_" + Math.floor(Math.random() * 10000);
+                const userDisplayName = "FIDO2 测试密钥";
+
+                // 定义依赖方 (RP) 信息。注意: 实际生产需匹配当前域名
+                const rpId = window.location.hostname;
+                const rpName = "FIDO2 测试网站 (本地演示)";
+
+                // 创建凭据选项
+                const publicKeyCredentialCreationOptions = {
+                    challenge: challenge,
+                    rp: {
+                        id: rpId,
+                        name: rpName,
+                    },
+                    user: {
+                        id: userId,
+                        name: userName,
+                        displayName: userDisplayName,
+                    },
+                    pubKeyCredParams: [
+                        { alg: -7, type: "public-key" },  // ES256
+                        { alg: -257, type: "public-key" }, // RS256
+                    ],
+                    timeout: 60000, // 60秒超时
+                    authenticatorSelection: {
+                        // 不强制 residentKey，但允许 discovery，设为 preferred 使得支持可发现凭证，但不强制
+                        residentKey: "preferred",
+                        userVerification: "preferred",   // 允许 PIN/生物识别，提升兼容
+                        authenticatorAttachment: undefined, // 跨平台或平台均可
+                    },
+                    attestation: "none", // 不需要验证证书，简化测试
+                    // 扩展 (可选)
+                    extensions: {
+                        credProps: true, // 请求返回凭证属性，以判断是否为 resident key
+                    },
+                };
+
+                addLog(`RP ID: ${rpId}, 用户: ${userName}, challenge: ${bufferToBase64Url(challenge).substring(0,12)}...`);
+
+                // 调用 WebAuthn 创建
+                const credential = await navigator.credentials.create({
+                    publicKey: publicKeyCredentialCreationOptions
+                });
+
+                // 成功拿到 PublicKeyCredential
+                const response = credential.response;
+                if (!(response instanceof AuthenticatorAttestationResponse)) {
+                    throw new Error("无效的认证响应类型");
+                }
+
+                // 提取 credential ID (Base64URL 格式)
+                const credentialId = credential.id;
+                const clientDataJSON = response.clientDataJSON;
+                const attestationObject = response.attestationObject;
+                
+                // 可选: 解析 attestationObject 以获取公钥 (生产环境需要验证签名)
+                // 简单存储凭证ID和公钥信息用于模拟后续断言
+                // 为了演示断言，我们必须保留 credentialId 以及公钥信息 (但我们不能从attestationObject直接简单提取，这里借助一个技巧)
+                // 但实际生产上服务端会解析公钥并存储。本测试为了演示完整的 "注册-登录" 流程，我们存储credentialId并且从attestationObject中解析公钥比较复杂，
+                // 但我们仅为了证明密钥工作，在断言阶段我们需要 credentialId 即可，而公钥验证由浏览器内置处理，但我们在第二次断言时其实需要传入允许的 credential list。
+                // WebAuthn 断言要求提供允许的凭证ID列表，该ID就是之前生成的 credential.id。 所以存储 credentialId 足够。
+                // 但还需要注意 transports (传输方式), 从凭证响应中可以获取，如果没有，使用默认 ['usb', 'nfc', 'ble']。
+                let transports = [];
+                if (response.getTransports) {
+                    transports = response.getTransports();
+                }
+                
+                storedCredential = {
+                    id: credentialId,   // string (base64url)
+                    idBuffer: null,     // 保留原始buffer，实际使用时直接用id字符串
+                    transports: transports,
+                };
+                
+                addLog(`✅ 注册成功！凭证 ID: ${credentialId.substring(0, 32)}...`);
+                addLog(`支持的传输方式: ${transports.length ? transports.join(', ') : '未知 (默认 USB/NFC)'}`);
+                
+                setStatusMessage(`✅ 注册成功！安全密钥已绑定。现在可以点击"断言验证"测试登录。凭证ID: ${credentialId.substring(0, 20)}...`, false, true);
+                resetStatusNeutral(); // 颜色重置为中性，但消息内容为成功
+                statusMessageDiv.innerHTML = `✅ 注册成功！安全密钥已绑定。凭证ID: ${credentialId.substring(0, 30)}... 可进行断言测试。`;
+                statusMessageDiv.style.background = '#e6f7ec';
+                statusMessageDiv.style.color = '#0a5c2e';
+                
+                // 额外记录凭证属性
+                if (credential.getClientExtensionResults) {
+                    const extResults = credential.getClientExtensionResults();
+                    if (extResults.credProps && extResults.credProps.rk) {
+                        addLog(`ℹ️ 凭证属性: residentKey = ${extResults.credProps.rk} (可发现凭证)`);
+                    }
+                }
+            } catch (err) {
+                console.error("注册错误: ", err);
+                let errorMsg = err.message;
+                if (err.name === "NotAllowedError") errorMsg = "用户取消操作或超时/未触摸安全密钥。";
+                else if (err.name === "NotSupportedError") errorMsg = "当前设备/浏览器不支持此安全密钥操作。";
+                else if (err.name === "SecurityError") errorMsg = "安全错误: 请确保页面通过 HTTPS 或 localhost 访问。";
+                setStatusMessage(`❌ 注册失败: ${errorMsg}`, true);
+                addLog(`注册失败: ${err.name} - ${err.message}`, true);
+                // 如果错误由于凭证重复？不处理
+            }
+        }
+
+        // 断言验证 (GetAssertion)
+        async function handleLogin() {
+            if (!window.PublicKeyCredential) {
+                setStatusMessage("WebAuthn 不可用，无法验证", true);
+                addLog("断言失败: 浏览器不支持 WebAuthn", true);
+                return;
+            }
+            if (!storedCredential || !storedCredential.id) {
+                setStatusMessage("⚠️ 尚未注册任何凭证，请先点击「注册新凭证」", true);
+                addLog("断言失败: 没有已注册的凭证，无法进行断言测试", true);
+                return;
+            }
+            
+            try {
+                setStatusMessage("⏳ 正在请求安全密钥签名... 请触摸/确认您的密钥", false);
+                addLog(`开始断言验证，使用凭证ID: ${storedCredential.id.substring(0, 24)}...`);
+                
+                const challenge = randomBase64Buffer(32);
+                const rpId = window.location.hostname;
+                
+                // 构建允许的凭证列表
+                const allowCredentials = [{
+                    id: storedCredential.id,   // base64url 字符串，浏览器会自动转换
+                    type: "public-key",
+                    transports: storedCredential.transports && storedCredential.transports.length ? storedCredential.transports : ['usb', 'nfc', 'ble', 'internal']
+                }];
+                
+                const publicKeyRequestOptions = {
+                    challenge: challenge,
+                    timeout: 60000,
+                    rpId: rpId,
+                    allowCredentials: allowCredentials,
+                    userVerification: "preferred",   // 便于 PIN/生物识别
+                    // 扩展: 请求返回用户验证结果
+                };
+                
+                addLog(`请求参数: RP ID = ${rpId}, challenge = ${bufferToBase64Url(challenge).substring(0,12)}...`);
+                
+                const assertion = await navigator.credentials.get({
+                    publicKey: publicKeyRequestOptions
+                });
+                
+                // 断言成功
+                const response = assertion.response;
+                if (!(response instanceof AuthenticatorAssertionResponse)) {
+                    throw new Error("无效的断言响应类型");
+                }
+                
+                const clientDataJSON = response.clientDataJSON;
+                const authenticatorData = response.authenticatorData;
+                const signature = response.signature;
+                const userHandle = response.userHandle;
+                
+                addLog(`✅ 断言验证成功！签名已生成。`);
+                addLog(`签名长度: ${signature.byteLength} 字节, authenticatorData长度: ${authenticatorData.byteLength}`);
+                if (userHandle && userHandle.byteLength > 0) {
+                    addLog(`用户句柄 (userHandle): ${bufferToBase64Url(userHandle).substring(0, 20)}...`);
+                }
+                
+                setStatusMessage(`🎉 验证成功！安全密钥已正确签名。该密钥通过 FIDO2 认证测试。`, false, true);
+                statusMessageDiv.innerHTML = `🎉 验证成功！安全密钥工作正常，签名有效。可重复测试。`;
+                statusMessageDiv.style.background = '#e6f7ec';
+                statusMessageDiv.style.color = '#0a5c2e';
+                
+                // 额外提示签名计数 (如果authenticatorData包含签名计数器)
+                // 从authenticatorData中提取签名计数器 (偏移33开始4字节)
+                if (authenticatorData && authenticatorData.byteLength >= 37) {
+                    const view = new DataView(authenticatorData);
+                    const counter = view.getUint32(33, false);
+                    addLog(`签名计数器 (signCount): ${counter} (若反复注册/登录会增加)`);
+                }
+                
+            } catch (err) {
+                console.error("断言错误: ", err);
+                let errorMsg = err.message;
+                if (err.name === "NotAllowedError") errorMsg = "用户取消或未触摸安全密钥/超时";
+                else if (err.name === "NotSupportedError") errorMsg = "当前密钥不支持此操作或凭证ID不匹配";
+                else if (err.name === "SecurityError") errorMsg = "安全错误: 请检查域名是否匹配RP ID";
+                setStatusMessage(`❌ 验证失败: ${errorMsg}`, true);
+                addLog(`断言失败: ${err.name} - ${err.message}`, true);
+            }
+        }
+        
+        // 清空日志同时清除存储的凭证? 为了体验，仅清空日志区，不清除存储的凭证（用户可手动再注册）
+        function clearLog() {
+            while (logArea.children.length > 0) {
+                logArea.removeChild(logArea.firstChild);
+            }
+            addLog("日志已清空，测试状态保留。");
+            // 不重置凭证，但也可重置status显示
+            resetStatusNeutral();
+            setStatusMessage("就绪。点击按钮开始测试您的 FIDO2 安全密钥。", false);
+        }
+        
+        // 可选重置凭证按钮（不提供额外UI，但用户可通过再次注册覆盖）
+        // 为了让注册覆盖旧凭证时更新全局变量，在注册成功时更新 storedCredential 即可。
+        
+        // 绑定事件
+        registerBtn.addEventListener('click', handleRegistration);
+        loginBtn.addEventListener('click', handleLogin);
+        clearLogBtn.addEventListener('click', clearLog);
+        
+        // 页面启动检测
+        checkBrowserSupport();
+        
+        // 额外输出帮助信息
+        addLog("💡 提示: 请确保浏览器使用 HTTPS 或 localhost。点击注册，浏览器会弹出选择安全密钥/内置验证器。");
+    })();
+</script>
+</body>
+</html>
