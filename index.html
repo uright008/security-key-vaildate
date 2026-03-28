@@ -177,6 +177,11 @@
             font-family: monospace;
             word-break: break-all;
         }
+
+        .warning {
+            background: #fef3c7;
+            border-left: 3px solid #f59e0b;
+        }
     </style>
 </head>
 <body>
@@ -320,8 +325,8 @@
         const hmacSelect = document.getElementById('hmacSelect');
         const credProtectSelect = document.getElementById('credProtectSelect');
 
-        // 全局存储: 保存已注册凭证信息 (ID + transports + 是否支持largeBlob)
-        let storedCredential = null;   // { id, transports, largeBlobSupported, hmacSecretSupported }
+        // 全局存储: 保存已注册凭证信息
+        let storedCredential = null;   // { id (string base64url), idBuffer (ArrayBuffer), transports, largeBlobSupported, hmacSupported }
 
         // 标志: 是否在下一次断言时执行largeBlob写入操作
         let pendingLargeBlobWrite = false;
@@ -331,7 +336,33 @@
         const rpId = window.location.hostname;
         rpIdDisplay.innerText = rpId || "localhost";
 
-        // 辅助: 添加日志
+        // 辅助函数: base64url 转 ArrayBuffer
+        function base64UrlToBuffer(base64Url) {
+            // 将 base64url 转为标准 base64
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            // 补齐 padding
+            while (base64.length % 4) {
+                base64 += '=';
+            }
+            const binaryString = atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // 辅助: ArrayBuffer 转 base64url
+        function bufferToBase64Url(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        // 添加日志
         function addLog(message, isError = false) {
             const logEntry = document.createElement('div');
             logEntry.className = 'log-entry';
@@ -365,8 +396,8 @@
 
         function updateCredDisplay() {
             if (storedCredential && storedCredential.id) {
-                let shortId = storedCredential.id.substring(0, 28) + (storedCredential.id.length > 28 ? '…' : '');
-                credIdDisplaySpan.innerHTML = `<strong>${shortId}</strong> ${storedCredential.transports ? '📡 '+storedCredential.transports.join(',') : ''}`;
+                let shortId = storedCredential.id.substring(0, 32) + (storedCredential.id.length > 32 ? '…' : '');
+                credIdDisplaySpan.innerHTML = `<strong>${shortId}</strong><br>📡 ${storedCredential.transports ? storedCredential.transports.join(', ') : '未报告'}`;
             } else {
                 credIdDisplaySpan.innerHTML = '无 (请先注册)';
             }
@@ -377,13 +408,6 @@
             const arr = new Uint8Array(len);
             crypto.getRandomValues(arr);
             return arr;
-        }
-
-        function bufferToBase64Url(buf) {
-            const bytes = new Uint8Array(buf);
-            let binary = '';
-            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
         }
 
         // 构建扩展对象
@@ -403,7 +427,7 @@
             if (credProtect) {
                 extensions.credentialProtectionPolicy = credProtect;
             }
-            // 额外请求 credProps 以确认 residentKey
+            // 请求 credProps 以确认 residentKey
             extensions.credProps = true;
             return extensions;
         }
@@ -417,11 +441,11 @@
             }
             try {
                 setStatusMessage("⏳ 准备注册，请等待浏览器弹窗...");
-                addLog("开始注册，使用高级配置: residentKey="+residentKeySelect.value+", uv="+userVerificationSelect.value);
+                addLog("开始注册，使用高级配置: residentKey=" + residentKeySelect.value + ", uv=" + userVerificationSelect.value);
 
                 const challenge = randomBuffer(32);
                 const userId = randomBuffer(16);
-                const userName = "FIDO2用户_" + Math.floor(Math.random()*10000);
+                const userName = "FIDO2用户_" + Math.floor(Math.random() * 10000);
 
                 const authenticatorSelection = {
                     residentKey: residentKeySelect.value,
@@ -436,8 +460,8 @@
                     rp: { id: rpId, name: "FIDO2 高级测试站" },
                     user: { id: userId, name: userName, displayName: "测试用户" },
                     pubKeyCredParams: [
-                        { alg: -7, type: "public-key" },
-                        { alg: -257, type: "public-key" },
+                        { alg: -7, type: "public-key" },  // ES256
+                        { alg: -257, type: "public-key" }, // RS256
                     ],
                     timeout: 90000,
                     authenticatorSelection: authenticatorSelection,
@@ -450,11 +474,15 @@
                 const response = credential.response;
                 if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error("响应类型错误");
 
+                // credential.id 已经是 base64url 字符串
                 const credentialId = credential.id;
                 let transports = [];
                 if (response.getTransports) transports = response.getTransports();
 
-                // 解析扩展结果，确定largeBlob/hmac是否实际被支持
+                // 将 credentialId 转换为 ArrayBuffer 存储，供后续断言使用
+                const credentialIdBuffer = base64UrlToBuffer(credentialId);
+
+                // 解析扩展结果
                 let extResults = {};
                 if (credential.getClientExtensionResults) extResults = credential.getClientExtensionResults();
                 const largeBlobSupported = !!(extResults.largeBlob && extResults.largeBlob.supported);
@@ -462,49 +490,54 @@
 
                 storedCredential = {
                     id: credentialId,
+                    idBuffer: credentialIdBuffer,
                     transports: transports,
                     largeBlobSupported: largeBlobSupported,
                     hmacSupported: hmacSupported
                 };
                 updateCredDisplay();
 
-                addLog(`✅ 注册成功! 凭证ID: ${credentialId.substring(0,36)}...`);
-                addLog(`传输方式: ${transports.length ? transports.join(',') : '未报告'} | LargeBlob支持: ${largeBlobSupported ? '是' : '否'} | HMAC Secret: ${hmacSupported ? '是' : '否'}`);
+                addLog(`✅ 注册成功! 凭证ID: ${credentialId.substring(0, 40)}...`);
+                addLog(`传输方式: ${transports.length ? transports.join(', ') : '未报告'} | LargeBlob支持: ${largeBlobSupported ? '是' : '否'} | HMAC Secret: ${hmacSupported ? '是' : '否'}`);
                 setStatusMessage(`✅ 注册成功！凭证已存储。LargeBlob: ${largeBlobSupported ? '支持' : '不支持'}`, false, true);
 
-                if (extResults.credProps) addLog(`凭证属性 residentKey: ${extResults.credProps.rk ? '是' : '否'}`);
+                if (extResults.credProps) {
+                    addLog(`凭证属性 residentKey: ${extResults.credProps.rk ? '是 (可发现凭证)' : '否'}`);
+                }
             } catch (err) {
                 console.error(err);
-                setStatusMessage(`❌ 注册失败: ${err.message}`, true);
+                let errorMsg = err.message;
+                if (err.name === "NotAllowedError") errorMsg = "用户取消或超时/未触摸安全密钥";
+                else if (err.name === "NotSupportedError") errorMsg = "当前安全密钥不支持所选配置 (如 required residentKey 但密钥不支持)";
+                setStatusMessage(`❌ 注册失败: ${errorMsg}`, true);
                 addLog(`注册错误 [${err.name}]: ${err.message}`, true);
             }
         }
 
-        // 断言登录 (支持largeBlob读写)
+        // 断言登录
         async function handleLogin(writeBlobMode = false, blobData = null) {
             if (!window.PublicKeyCredential) {
                 setStatusMessage("不支持WebAuthn", true);
                 return;
             }
-            if (!storedCredential || !storedCredential.id) {
+            if (!storedCredential || !storedCredential.idBuffer) {
                 setStatusMessage("⚠️ 尚未注册凭证，请先注册", true);
                 addLog("断言失败: 无已注册凭证", true);
                 return;
             }
             try {
                 setStatusMessage("⏳ 请求签名验证，请触摸安全密钥...");
-                addLog(`开始断言验证, 凭证ID: ${storedCredential.id.substring(0,28)}...`);
+                addLog(`开始断言验证, 凭证ID: ${storedCredential.id.substring(0, 32)}...`);
 
                 const challenge = randomBuffer(32);
+                // 关键修复: 使用 ArrayBuffer 类型的 id
                 const allowCredentials = [{
-                    id: storedCredential.id,
+                    id: storedCredential.idBuffer,  // 必须是 ArrayBuffer
                     type: "public-key",
                     transports: storedCredential.transports || ['usb', 'nfc', 'ble']
                 }];
 
-                const extensions = {
-                    // 如果支持largeBlob且需要写入或读取
-                };
+                const extensions = {};
                 if (writeBlobMode && blobData) {
                     extensions.largeBlob = { write: blobData };
                     addLog(`📦 尝试写入 LargeBlob (${blobData.byteLength} 字节)`);
@@ -526,37 +559,52 @@
                 const response = assertion.response;
                 if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error("断言响应无效");
 
-                addLog(`✅ 断言成功！签名生成，authenticatorData长度: ${response.authenticatorData.byteLength}`);
+                addLog(`✅ 断言成功！签名已生成`);
+                addLog(`签名长度: ${response.signature.byteLength} 字节`);
 
                 // 解析扩展输出
                 const extOutput = assertion.getClientExtensionResults();
                 if (extOutput.largeBlob) {
-                    if (extOutput.largeBlob.written) addLog(`✅ LargeBlob 写入成功`);
+                    if (extOutput.largeBlob.written) {
+                        addLog(`✅ LargeBlob 写入成功`);
+                        setStatusMessage(`✅ 验证成功，LargeBlob写入测试通过`, false, true);
+                    }
                     if (extOutput.largeBlob.blob) {
                         const blobText = new TextDecoder().decode(new Uint8Array(extOutput.largeBlob.blob));
-                        addLog(`📦 读取到 LargeBlob 数据: "${blobText.substring(0,50)}"`);
-                        setStatusMessage(`✅ 验证成功，LargeBlob读取到数据`, false, true);
-                    } else if (extOutput.largeBlob.written) {
-                        setStatusMessage(`✅ 验证成功，LargeBlob写入测试通过`, false, true);
-                    } else {
+                        addLog(`📦 读取到 LargeBlob 数据: "${blobText.substring(0, 80)}"`);
+                        setStatusMessage(`✅ 验证成功，LargeBlob读取到数据: ${blobText.substring(0, 50)}`, false, true);
+                    } else if (!extOutput.largeBlob.written) {
                         setStatusMessage(`✅ 验证成功，安全密钥工作正常`, false, true);
                     }
                 } else {
                     setStatusMessage(`✅ 验证成功，密钥签名有效`, false, true);
                 }
-                // 可选: 签名计数器
+
+                // 解析签名计数器
                 const authData = response.authenticatorData;
                 if (authData && authData.byteLength >= 37) {
                     const counter = new DataView(authData).getUint32(33, false);
                     addLog(`签名计数器 (signCount): ${counter}`);
                 }
+
+                // 解析用户验证状态
+                if (authData && authData.byteLength >= 33) {
+                    const flags = new Uint8Array(authData)[32];
+                    const up = (flags & 0x01) !== 0;
+                    const uv = (flags & 0x04) !== 0;
+                    addLog(`用户存在(UP): ${up}, 用户验证(UV): ${uv}`);
+                }
             } catch (err) {
-                setStatusMessage(`❌ 验证失败: ${err.message}`, true);
+                console.error(err);
+                let errorMsg = err.message;
+                if (err.name === "NotAllowedError") errorMsg = "用户取消或超时/未触摸安全密钥";
+                else if (err.name === "NotSupportedError") errorMsg = "凭证ID无效或安全密钥不支持该操作";
+                setStatusMessage(`❌ 验证失败: ${errorMsg}`, true);
                 addLog(`断言错误 [${err.name}]: ${err.message}`, true);
             }
         }
 
-        // 专门处理LargeBlob写入测试: 下一次登录时写入
+        // 专门处理LargeBlob写入测试
         function scheduleLargeBlobWrite() {
             if (!storedCredential) {
                 setStatusMessage("请先注册凭证才能测试LargeBlob写入", true);
@@ -569,8 +617,6 @@
             const testString = `FIDO2测试数据_${new Date().toISOString()}`;
             const encoder = new TextEncoder();
             const writeData = encoder.encode(testString);
-            // 限制长度小于64KB
-            if (writeData.length > 1024) {} // 实际安全
             pendingLargeBlobWrite = true;
             largeBlobWriteData = writeData;
             addLog(`📝 已安排写入LargeBlob: "${testString}"，下次点击【断言验证】时执行写入`);
@@ -588,14 +634,14 @@
             }
         }
 
-        // 清空日志保留凭证
+        // 清空日志
         function clearLog() {
             while (logArea.children.length > 0) logArea.removeChild(logArea.firstChild);
             addLog("日志已清空，凭证信息保留。");
             setStatusMessage("就绪");
         }
 
-        // 检查浏览器能力并显示
+        // 检查浏览器能力
         function checkCapabilities() {
             if (typeof PublicKeyCredential !== 'undefined') {
                 addLog(`✅ WebAuthn 支持, RP ID: ${rpId}`);
@@ -603,12 +649,7 @@
                     PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(avail => {
                         if (avail) addLog(`✅ 平台验证器可用 (Windows Hello/Touch ID)`);
                         else addLog(`ℹ️ 平台验证器不可用，请使用外部密钥`);
-                    });
-                }
-                if (PublicKeyCredential.isConditionalMediationAvailable) {
-                    PublicKeyCredential.isConditionalMediationAvailable().then(c => {
-                        if (c) addLog(`✅ 支持条件UI (Conditional Mediation)`);
-                    });
+                    }).catch(() => addLog(`无法检测平台验证器`));
                 }
             } else {
                 addLog("❌ 浏览器不支持WebAuthn", true);
@@ -625,7 +666,8 @@
 
         // 初始化
         checkCapabilities();
-        addLog("💡 高级特性面板可调整 Resident Key, UV, Large Blob, HMAC Secret 等参数。注册后自动检测扩展支持情况。");
+        addLog("💡 高级特性面板可调整 Resident Key, UV, Large Blob, HMAC Secret 等参数");
+        addLog("🔧 修复: 凭证ID现在正确使用 ArrayBuffer 类型，避免类型错误");
         updateCredDisplay();
     })();
 </script>
