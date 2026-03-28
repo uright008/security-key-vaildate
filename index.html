@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>FIDO2 安全密钥测试工具 | WebAuthn 演示</title>
-    <!-- 使用现代、简洁的样式，深色模式友好 -->
+    <title>FIDO2 安全密钥深度测试 | WebAuthn 全特性演示</title>
     <style>
         * {
             box-sizing: border-box;
@@ -12,196 +11,147 @@
 
         body {
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(145deg, #f5f7fc 0%, #eef2f8 100%);
+            background: linear-gradient(135deg, #f0f4fa 0%, #e6edf4 100%);
             margin: 0;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .card {
-            max-width: 950px;
-            width: 100%;
-            background: rgba(255,255,255,0.96);
-            backdrop-filter: blur(0px);
-            border-radius: 2rem;
-            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.05);
-            overflow: hidden;
-            transition: all 0.2s ease;
-        }
-
-        .header {
-            background: #0a2540;
-            color: white;
-            padding: 1.8rem 2rem;
-            text-align: center;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-weight: 600;
-            font-size: 1.9rem;
-            letter-spacing: -0.3px;
-        }
-
-        .header p {
-            margin: 0.6rem 0 0;
-            opacity: 0.85;
-            font-size: 1rem;
-        }
-
-        .content {
-            padding: 2rem 2rem 2rem 2rem;
-        }
-
-        .status-panel {
-            background: #f0f4f9;
-            border-radius: 1.5rem;
-            padding: 1.2rem 1.5rem;
-            margin-bottom: 2rem;
-            border-left: 5px solid #2c7da0;
-            transition: background 0.2s;
-        }
-
-        .status-title {
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-message {
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 0.9rem;
-            word-break: break-word;
-            color: #1e2f3e;
             background: white;
-            padding: 0.8rem 1rem;
-            border-radius: 1rem;
-            margin-top: 0.5rem;
-            border: 1px solid #dce5ec;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 24px;
         }
 
-        .badge {
-            display: inline-block;
-            background: #2c7da0;
+        .card-header {
+            background: #0f2b3d;
             color: white;
-            border-radius: 40px;
-            padding: 0.2rem 0.7rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin: 2rem 0 1.5rem;
-            justify-content: center;
-        }
-
-        button {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            padding: 0.85rem 1.7rem;
-            font-size: 1rem;
+            padding: 1rem 1.5rem;
             font-weight: 600;
-            border-radius: 60px;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            display: inline-flex;
+            font-size: 1.2rem;
+            display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        button i {
-            font-style: normal;
-            font-weight: normal;
-            font-size: 1.2rem;
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+            color: #1e3a5f;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        select:hover, button:hover {
+            border-color: #2c7da0;
         }
 
         button.primary {
-            background: #0a2540;
-            border-color: #0a2540;
+            background: #0f2b3d;
             color: white;
-            box-shadow: 0 4px 8px rgba(10,37,64,0.2);
+            border: none;
+            font-weight: 600;
+            margin-top: 0.5rem;
         }
 
         button.primary:hover {
             background: #1f4b6e;
-            transform: translateY(-1px);
         }
 
         button.secondary {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e2e8f0;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .status-area {
             background: #f8fafc;
-            border-color: #b9cadb;
-        }
-
-        button.secondary:hover {
-            background: #eef3fc;
-            border-color: #7f9cbb;
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
-        .info-section {
-            background: #fefce8;
-            border-radius: 1.2rem;
-            padding: 1.2rem 1.5rem;
-            margin-top: 1.8rem;
-            border: 1px solid #fde68a;
-        }
-
-        .info-section h3 {
-            margin: 0 0 0.6rem 0;
-            font-size: 1.1rem;
-            color: #b45309;
-        }
-
-        .info-section p, .info-section li {
-            font-size: 0.85rem;
-            line-height: 1.45;
-            color: #2d3e50;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #2c7da0;
         }
 
         .log-area {
-            background: #1e2a36;
-            color: #d4dcec;
-            font-family: monospace;
-            font-size: 0.8rem;
+            background: #1e293b;
+            color: #cbd5e6;
+            font-family: 'SF Mono', monospace;
+            font-size: 0.75rem;
             padding: 1rem;
             border-radius: 1rem;
-            margin-top: 1.8rem;
-            max-height: 180px;
+            max-height: 280px;
             overflow-y: auto;
         }
 
         .log-entry {
-            border-bottom: 1px solid #2e3a46;
-            padding: 0.3rem 0;
-            font-family: 'SF Mono', monospace;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #2d3a4a;
+            font-family: monospace;
         }
 
-        .log-time {
-            color: #8ba5b5;
-            margin-right: 10px;
+        .info-badge {
+            background: #eef2ff;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-top: 1rem;
         }
 
-        .success {
-            color: #15803d;
-            font-weight: 500;
+        .flex-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        .error {
-            color: #b91c1c;
-            font-weight: 500;
+        .flex-row button {
+            flex: 1;
         }
 
         hr {
@@ -211,407 +161,472 @@
             background: #e2e8f0;
         }
 
-        footer {
-            text-align: center;
+        .feature-tag {
+            background: #e6f7ec;
+            color: #0a5c2e;
             font-size: 0.7rem;
-            padding: 1rem;
-            color: #5f6c7a;
-            border-top: 1px solid #e9edf2;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
         }
 
-        @media (max-width: 640px) {
-            .content {
-                padding: 1.5rem;
-            }
-            button {
-                padding: 0.65rem 1.2rem;
-                font-size: 0.9rem;
-            }
+        .json-preview {
+            background: #f1f5f9;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-family: monospace;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
-
-<div class="card">
-    <div class="header">
-        <h1>🔐 FIDO2 安全密钥测试</h1>
-        <p>WebAuthn 协议 · 支持 USB / NFC / 生物识别安全密钥</p>
+<div class="container">
+    <div style="margin-bottom: 1rem;">
+        <h1 style="margin:0; font-size:1.8rem;">🔐 FIDO2 高级特性测试</h1>
+        <p style="color:#4a627a;">Resident Key · User Verification · 大Blob · HMAC Secret · 传输方式检测</p>
     </div>
 
-    <div class="content">
-        <!-- 状态显示面板 -->
-        <div class="status-panel" id="statusPanel">
-            <div class="status-title">
-                📟 测试状态
-                <span class="badge" id="browserBadge">检测中...</span>
+    <div class="main-grid">
+        <!-- 左侧主操作区 -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    📡 操作与状态
+                </div>
+                <div class="card-body">
+                    <div class="status-area" id="statusArea">
+                        <div style="font-weight:600;">📟 当前状态</div>
+                        <div id="statusMessage" style="margin-top:8px;">就绪，可配置下方高级选项后测试</div>
+                    </div>
+                    <div class="flex-row">
+                        <button id="registerBtn" class="primary" style="background:#0f2b3d;">✨ 注册新凭证 (MakeCredential)</button>
+                        <button id="loginBtn" class="primary" style="background:#0f2b3d;">🔑 断言验证 (GetAssertion)</button>
+                        <button id="clearLogBtn" class="secondary">🗑️ 清空日志</button>
+                    </div>
+                    <div class="info-badge">
+                        💡 提示：注册前请先配置右侧选项测试不同特性。支持 YubiKey / Solo / 平台验证器 (Windows Hello / Touch ID)
+                    </div>
+                </div>
             </div>
-            <div class="status-message" id="statusMessage">
-                就绪。点击下方按钮开始测试您的 FIDO2 安全密钥。
+
+            <div class="card">
+                <div class="card-header">
+                    📋 详细日志 & 凭证信息
+                </div>
+                <div class="card-body">
+                    <div id="credInfo" style="background:#fef9e3; padding:8px 12px; border-radius:12px; margin-bottom:12px; font-size:0.8rem;">
+                        📌 当前已注册凭证: <span id="credIdDisplay">无</span>
+                    </div>
+                    <div class="log-area" id="logArea">
+                        <div class="log-entry">🟢 高级测试工具已加载</div>
+                        <div class="log-entry">⚙️ 支持 Resident Key, UV 策略, Large Blob, HMAC Secret 等扩展</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- 主要操作按钮组 -->
-        <div class="button-group">
-            <button id="registerBtn" class="primary">✨ 注册新凭证 (MakeCredential)</button>
-            <button id="loginBtn" class="primary">🔑 断言验证 (GetAssertion)</button>
-            <button id="clearLogBtn" class="secondary">🗑️ 清空日志</button>
-        </div>
+        <!-- 右侧高级选项面板 -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    🎛️ FIDO2 高级特性配置
+                </div>
+                <div class="card-body">
+                    <div class="control-group">
+                        <div class="control-label">🔹 Resident Key (可发现凭证)</div>
+                        <select id="residentKeySelect">
+                            <option value="discouraged">discouraged - 不存储</option>
+                            <option value="preferred" selected>preferred - 优先但允许不存</option>
+                            <option value="required">required - 必须存储在密钥中</option>
+                        </select>
+                    </div>
 
-        <!-- 额外说明与提示 -->
-        <div class="info-section">
-            <h3>🧪 测试指引</h3>
-            <p>✔ 此网站用于验证 <strong>FIDO2 / WebAuthn</strong> 兼容安全密钥 (如 YubiKey, SoloKey, 生物识别密钥等)。<br>
-            ✔ 点击 <strong>注册新凭证</strong> → 浏览器会提示插入/触摸安全密钥 (若平台验证器可用也会显示)。<br>
-            ✔ 注册成功后，点击 <strong>断言验证</strong> 使用同一密钥完成签名认证，证明密钥正常工作。<br>
-            ✔ 所有操作均在本机完成，凭证仅保存在当前设备/密钥中，不会上传任何敏感信息。<br>
-            ⚠️ 需要 HTTPS 或 localhost 环境，确保浏览器支持 WebAuthn。</p>
-        </div>
+                    <div class="control-group">
+                        <div class="control-label">🆔 User Verification (用户验证)</div>
+                        <select id="userVerificationSelect">
+                            <option value="discouraged">discouraged - 不验证</option>
+                            <option value="preferred" selected>preferred - 尽量验证 (指纹/PIN)</option>
+                            <option value="required">required - 必须验证</option>
+                        </select>
+                    </div>
 
-        <!-- 详细日志区 -->
-        <div class="log-area" id="logArea">
-            <div class="log-entry">🟢 测试工具已加载，等待用户交互...</div>
+                    <div class="control-group">
+                        <div class="control-label">🔌 Authenticator Attachment</div>
+                        <select id="attachmentSelect">
+                            <option value="">any - 任意类型</option>
+                            <option value="platform">platform - 平台内置 (Windows Hello/Touch ID)</option>
+                            <option value="cross-platform">cross-platform - 外部密钥 (USB/NFC)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">📦 Large Blob (大容量存储扩展)</div>
+                        <select id="largeBlobSelect">
+                            <option value="none">disabled - 禁用</option>
+                            <option value="preferred" selected>preferred - 尝试支持</option>
+                            <option value="required">required - 必须支持 (否则失败)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">🔐 HMAC Secret (派生对称密钥)</div>
+                        <select id="hmacSelect">
+                            <option value="false">disabled</option>
+                            <option value="true" selected>enabled - 请求 HMAC 密钥扩展</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">🛡️ 凭证保护策略 (Credential Protection)</div>
+                        <select id="credProtectSelect">
+                            <option value="">none - 不指定</option>
+                            <option value="userVerificationOptional">userVerificationOptional</option>
+                            <option value="userVerificationRequired">userVerificationRequired</option>
+                        </select>
+                    </div>
+                    <hr>
+                    <div class="control-group">
+                        <div class="control-label">🧪 Large Blob 写入测试 (仅登录时写入)</div>
+                        <button id="writeBlobBtn" class="secondary" style="background:#eef2ff;">✍️ 在下次断言时写入测试数据 (64字节)</button>
+                        <div style="font-size:0.7rem; margin-top:5px;">点击后下次登录会尝试写入blob，并读取验证</div>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label">📎 当前RP ID</div>
+                        <div class="json-preview" id="rpIdDisplay">加载中...</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <footer>
-            FIDO2 WebAuthn 测试 | 支持 Resident Key / 用户验证 (UV) 可选
-        </footer>
     </div>
 </div>
 
 <script>
     (function() {
-        // ---------- DOM 元素 ----------
+        // DOM 元素
         const registerBtn = document.getElementById('registerBtn');
         const loginBtn = document.getElementById('loginBtn');
         const clearLogBtn = document.getElementById('clearLogBtn');
+        const writeBlobBtn = document.getElementById('writeBlobBtn');
         const statusMessageDiv = document.getElementById('statusMessage');
-        const browserBadgeSpan = document.getElementById('browserBadge');
         const logArea = document.getElementById('logArea');
+        const credIdDisplaySpan = document.getElementById('credIdDisplay');
+        const rpIdDisplay = document.getElementById('rpIdDisplay');
 
-        // 辅助: 添加日志 (带时间戳)
+        // 选择器
+        const residentKeySelect = document.getElementById('residentKeySelect');
+        const userVerificationSelect = document.getElementById('userVerificationSelect');
+        const attachmentSelect = document.getElementById('attachmentSelect');
+        const largeBlobSelect = document.getElementById('largeBlobSelect');
+        const hmacSelect = document.getElementById('hmacSelect');
+        const credProtectSelect = document.getElementById('credProtectSelect');
+
+        // 全局存储: 保存已注册凭证信息 (ID + transports + 是否支持largeBlob)
+        let storedCredential = null;   // { id, transports, largeBlobSupported, hmacSecretSupported }
+
+        // 标志: 是否在下一次断言时执行largeBlob写入操作
+        let pendingLargeBlobWrite = false;
+        let largeBlobWriteData = null;
+
+        // 显示RP ID
+        const rpId = window.location.hostname;
+        rpIdDisplay.innerText = rpId || "localhost";
+
+        // 辅助: 添加日志
         function addLog(message, isError = false) {
             const logEntry = document.createElement('div');
             logEntry.className = 'log-entry';
             const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
             const prefix = isError ? '❌' : '🔷';
-            logEntry.innerHTML = `<span class="log-time">[${time}]</span> ${prefix} ${message}`;
+            logEntry.innerHTML = `<span style="color:#8ba5b5;">[${time}]</span> ${prefix} ${message}`;
             if (isError) {
                 logEntry.style.color = '#ffb4a2';
                 logEntry.style.borderLeft = '3px solid #e5484d';
-                logEntry.style.paddingLeft = '8px';
-            } else {
-                logEntry.style.color = '#cbdbe6';
+                logEntry.style.paddingLeft = '6px';
             }
             logArea.appendChild(logEntry);
             logEntry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            // 保留最多60条日志防止过多
-            while (logArea.children.length > 80) {
-                logArea.removeChild(logArea.firstChild);
-            }
+            while (logArea.children.length > 100) logArea.removeChild(logArea.firstChild);
         }
 
-        // 更新顶部状态消息 (普通/成功/错误)
         function setStatusMessage(text, isError = false, isSuccess = false) {
             statusMessageDiv.innerHTML = text;
+            const statusArea = document.getElementById('statusArea');
             if (isError) {
+                statusArea.style.borderLeftColor = '#e5484d';
                 statusMessageDiv.style.color = '#b91c1c';
-                statusMessageDiv.style.background = '#ffe6e5';
-                statusMessageDiv.style.borderLeft = '4px solid #b91c1c';
             } else if (isSuccess) {
+                statusArea.style.borderLeftColor = '#2b9348';
                 statusMessageDiv.style.color = '#0a5c2e';
-                statusMessageDiv.style.background = '#e6f7ec';
-                statusMessageDiv.style.borderLeft = '4px solid #2b9348';
             } else {
+                statusArea.style.borderLeftColor = '#2c7da0';
                 statusMessageDiv.style.color = '#1e2f3e';
-                statusMessageDiv.style.background = 'white';
-                statusMessageDiv.style.borderLeft = 'none';
             }
         }
 
-        // 重置状态为中性
-        function resetStatusNeutral() {
-            statusMessageDiv.style.color = '#1e2f3e';
-            statusMessageDiv.style.background = 'white';
-            statusMessageDiv.style.borderLeft = 'none';
-        }
-
-        // 检测浏览器 WebAuthn 支持并更新徽章
-        function checkBrowserSupport() {
-            const isSupported = typeof window.PublicKeyCredential !== 'undefined';
-            if (isSupported) {
-                browserBadgeSpan.innerHTML = '✅ WebAuthn 支持';
-                browserBadgeSpan.style.background = '#2b9348';
-                addLog(`浏览器支持 WebAuthn (PublicKeyCredential 可用)`, false);
-                // 额外检查是否支持平台验证器 (可选)
-                if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
-                    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(available => {
-                        if (available) {
-                            addLog(`✅ 平台验证器可用 (如指纹/Windows Hello/Touch ID)`, false);
-                        } else {
-                            addLog(`ℹ️ 平台验证器不可用，请使用外部安全密钥 (USB/NFC)`, false);
-                        }
-                    }).catch(() => {});
-                }
+        function updateCredDisplay() {
+            if (storedCredential && storedCredential.id) {
+                let shortId = storedCredential.id.substring(0, 28) + (storedCredential.id.length > 28 ? '…' : '');
+                credIdDisplaySpan.innerHTML = `<strong>${shortId}</strong> ${storedCredential.transports ? '📡 '+storedCredential.transports.join(',') : ''}`;
             } else {
-                browserBadgeSpan.innerHTML = '❌ 不支持 WebAuthn';
-                browserBadgeSpan.style.background = '#b91c1c';
-                setStatusMessage("您的浏览器不支持 WebAuthn/FIDO2 协议，请使用 Chrome, Edge, Safari 或 Firefox 最新版本。", true);
-                addLog(`严重错误: 当前环境 window.PublicKeyCredential 未定义，无法进行 FIDO2 测试`, true);
-                registerBtn.disabled = true;
-                loginBtn.disabled = true;
+                credIdDisplaySpan.innerHTML = '无 (请先注册)';
             }
         }
 
-        // ---------- 生成随机凭证ID和challenge (使用标准Crypto) ----------
-        function randomBase64Buffer(len = 32) {
+        // 生成随机buffer
+        function randomBuffer(len) {
             const arr = new Uint8Array(len);
             crypto.getRandomValues(arr);
             return arr;
         }
 
-        // 将 ArrayBuffer 转为 base64url 字符串 (用于显示日志)
-        function bufferToBase64Url(buffer) {
-            const bytes = new Uint8Array(buffer);
+        function bufferToBase64Url(buf) {
+            const bytes = new Uint8Array(buf);
             let binary = '';
-            for (let i = 0; i < bytes.byteLength; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
+            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
             return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
         }
 
-        // 生成一个简单的凭据 ID (随机)
-        function generateCredentialId() {
-            return randomBase64Buffer(16);
+        // 构建扩展对象
+        function buildExtensions() {
+            const extensions = {};
+            // Large Blob
+            const largeBlobMode = largeBlobSelect.value;
+            if (largeBlobMode !== 'none') {
+                extensions.largeBlob = { support: largeBlobMode };
+            }
+            // HMAC Secret
+            if (hmacSelect.value === 'true') {
+                extensions.hmacCreateSecret = true;
+            }
+            // Credential Protection
+            const credProtect = credProtectSelect.value;
+            if (credProtect) {
+                extensions.credentialProtectionPolicy = credProtect;
+            }
+            // 额外请求 credProps 以确认 residentKey
+            extensions.credProps = true;
+            return extensions;
         }
 
-        // 全局存储: 模拟服务端存储当前用户注册的凭证公钥信息 (实际测试中仅保存必要字段以便后续断言)
-        // 注意: 实际生产环境中需存储 credentialId, publicKey, 以及 transports 等信息。这里为了演示，保存最近注册的凭证。
-        let storedCredential = null;   // 存储 { id: ArrayBuffer, publicKey: ArrayBuffer, transports: [] }
-
-        // 注册新凭证 (MakeCredential)
-        async function handleRegistration() {
+        // 注册
+        async function handleRegister() {
             if (!window.PublicKeyCredential) {
-                setStatusMessage("WebAuthn 不可用，无法注册", true);
-                addLog("注册失败: 浏览器不支持 WebAuthn", true);
+                setStatusMessage("浏览器不支持WebAuthn", true);
+                addLog("注册失败: 不支持WebAuthn", true);
                 return;
             }
-
             try {
-                setStatusMessage("⏳ 准备注册请求，请等待浏览器弹窗...", false);
-                addLog("开始创建新的 FIDO2 凭证 (MakeCredential)");
+                setStatusMessage("⏳ 准备注册，请等待浏览器弹窗...");
+                addLog("开始注册，使用高级配置: residentKey="+residentKeySelect.value+", uv="+userVerificationSelect.value);
 
-                // 生成 challenge (至少16字节)
-                const challenge = randomBase64Buffer(32);
-                // 生成 user.id (随机)
-                const userId = randomBase64Buffer(16);
-                // 定义一个测试用户 (模拟)
-                const userName = "测试用户_" + Math.floor(Math.random() * 10000);
-                const userDisplayName = "FIDO2 测试密钥";
+                const challenge = randomBuffer(32);
+                const userId = randomBuffer(16);
+                const userName = "FIDO2用户_" + Math.floor(Math.random()*10000);
 
-                // 定义依赖方 (RP) 信息。注意: 实际生产需匹配当前域名
-                const rpId = window.location.hostname;
-                const rpName = "FIDO2 测试网站 (本地演示)";
+                const authenticatorSelection = {
+                    residentKey: residentKeySelect.value,
+                    userVerification: userVerificationSelect.value,
+                };
+                if (attachmentSelect.value) {
+                    authenticatorSelection.authenticatorAttachment = attachmentSelect.value;
+                }
 
-                // 创建凭据选项
-                const publicKeyCredentialCreationOptions = {
+                const createOptions = {
                     challenge: challenge,
-                    rp: {
-                        id: rpId,
-                        name: rpName,
-                    },
-                    user: {
-                        id: userId,
-                        name: userName,
-                        displayName: userDisplayName,
-                    },
+                    rp: { id: rpId, name: "FIDO2 高级测试站" },
+                    user: { id: userId, name: userName, displayName: "测试用户" },
                     pubKeyCredParams: [
-                        { alg: -7, type: "public-key" },  // ES256
-                        { alg: -257, type: "public-key" }, // RS256
+                        { alg: -7, type: "public-key" },
+                        { alg: -257, type: "public-key" },
                     ],
-                    timeout: 60000, // 60秒超时
-                    authenticatorSelection: {
-                        // 不强制 residentKey，但允许 discovery，设为 preferred 使得支持可发现凭证，但不强制
-                        residentKey: "preferred",
-                        userVerification: "preferred",   // 允许 PIN/生物识别，提升兼容
-                        authenticatorAttachment: undefined, // 跨平台或平台均可
-                    },
-                    attestation: "none", // 不需要验证证书，简化测试
-                    // 扩展 (可选)
-                    extensions: {
-                        credProps: true, // 请求返回凭证属性，以判断是否为 resident key
-                    },
+                    timeout: 90000,
+                    authenticatorSelection: authenticatorSelection,
+                    attestation: "none",
+                    extensions: buildExtensions()
                 };
 
-                addLog(`RP ID: ${rpId}, 用户: ${userName}, challenge: ${bufferToBase64Url(challenge).substring(0,12)}...`);
-
-                // 调用 WebAuthn 创建
-                const credential = await navigator.credentials.create({
-                    publicKey: publicKeyCredentialCreationOptions
-                });
-
-                // 成功拿到 PublicKeyCredential
+                addLog(`RP ID: ${rpId}, residentKey: ${residentKeySelect.value}, UV: ${userVerificationSelect.value}`);
+                const credential = await navigator.credentials.create({ publicKey: createOptions });
                 const response = credential.response;
-                if (!(response instanceof AuthenticatorAttestationResponse)) {
-                    throw new Error("无效的认证响应类型");
-                }
+                if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error("响应类型错误");
 
-                // 提取 credential ID (Base64URL 格式)
                 const credentialId = credential.id;
-                const clientDataJSON = response.clientDataJSON;
-                const attestationObject = response.attestationObject;
-                
-                // 可选: 解析 attestationObject 以获取公钥 (生产环境需要验证签名)
-                // 简单存储凭证ID和公钥信息用于模拟后续断言
-                // 为了演示断言，我们必须保留 credentialId 以及公钥信息 (但我们不能从attestationObject直接简单提取，这里借助一个技巧)
-                // 但实际生产上服务端会解析公钥并存储。本测试为了演示完整的 "注册-登录" 流程，我们存储credentialId并且从attestationObject中解析公钥比较复杂，
-                // 但我们仅为了证明密钥工作，在断言阶段我们需要 credentialId 即可，而公钥验证由浏览器内置处理，但我们在第二次断言时其实需要传入允许的 credential list。
-                // WebAuthn 断言要求提供允许的凭证ID列表，该ID就是之前生成的 credential.id。 所以存储 credentialId 足够。
-                // 但还需要注意 transports (传输方式), 从凭证响应中可以获取，如果没有，使用默认 ['usb', 'nfc', 'ble']。
                 let transports = [];
-                if (response.getTransports) {
-                    transports = response.getTransports();
-                }
-                
+                if (response.getTransports) transports = response.getTransports();
+
+                // 解析扩展结果，确定largeBlob/hmac是否实际被支持
+                let extResults = {};
+                if (credential.getClientExtensionResults) extResults = credential.getClientExtensionResults();
+                const largeBlobSupported = !!(extResults.largeBlob && extResults.largeBlob.supported);
+                const hmacSupported = !!(extResults.hmacCreateSecret);
+
                 storedCredential = {
-                    id: credentialId,   // string (base64url)
-                    idBuffer: null,     // 保留原始buffer，实际使用时直接用id字符串
+                    id: credentialId,
                     transports: transports,
+                    largeBlobSupported: largeBlobSupported,
+                    hmacSupported: hmacSupported
                 };
-                
-                addLog(`✅ 注册成功！凭证 ID: ${credentialId.substring(0, 32)}...`);
-                addLog(`支持的传输方式: ${transports.length ? transports.join(', ') : '未知 (默认 USB/NFC)'}`);
-                
-                setStatusMessage(`✅ 注册成功！安全密钥已绑定。现在可以点击"断言验证"测试登录。凭证ID: ${credentialId.substring(0, 20)}...`, false, true);
-                resetStatusNeutral(); // 颜色重置为中性，但消息内容为成功
-                statusMessageDiv.innerHTML = `✅ 注册成功！安全密钥已绑定。凭证ID: ${credentialId.substring(0, 30)}... 可进行断言测试。`;
-                statusMessageDiv.style.background = '#e6f7ec';
-                statusMessageDiv.style.color = '#0a5c2e';
-                
-                // 额外记录凭证属性
-                if (credential.getClientExtensionResults) {
-                    const extResults = credential.getClientExtensionResults();
-                    if (extResults.credProps && extResults.credProps.rk) {
-                        addLog(`ℹ️ 凭证属性: residentKey = ${extResults.credProps.rk} (可发现凭证)`);
-                    }
-                }
+                updateCredDisplay();
+
+                addLog(`✅ 注册成功! 凭证ID: ${credentialId.substring(0,36)}...`);
+                addLog(`传输方式: ${transports.length ? transports.join(',') : '未报告'} | LargeBlob支持: ${largeBlobSupported ? '是' : '否'} | HMAC Secret: ${hmacSupported ? '是' : '否'}`);
+                setStatusMessage(`✅ 注册成功！凭证已存储。LargeBlob: ${largeBlobSupported ? '支持' : '不支持'}`, false, true);
+
+                if (extResults.credProps) addLog(`凭证属性 residentKey: ${extResults.credProps.rk ? '是' : '否'}`);
             } catch (err) {
-                console.error("注册错误: ", err);
-                let errorMsg = err.message;
-                if (err.name === "NotAllowedError") errorMsg = "用户取消操作或超时/未触摸安全密钥。";
-                else if (err.name === "NotSupportedError") errorMsg = "当前设备/浏览器不支持此安全密钥操作。";
-                else if (err.name === "SecurityError") errorMsg = "安全错误: 请确保页面通过 HTTPS 或 localhost 访问。";
-                setStatusMessage(`❌ 注册失败: ${errorMsg}`, true);
-                addLog(`注册失败: ${err.name} - ${err.message}`, true);
-                // 如果错误由于凭证重复？不处理
+                console.error(err);
+                setStatusMessage(`❌ 注册失败: ${err.message}`, true);
+                addLog(`注册错误 [${err.name}]: ${err.message}`, true);
             }
         }
 
-        // 断言验证 (GetAssertion)
-        async function handleLogin() {
+        // 断言登录 (支持largeBlob读写)
+        async function handleLogin(writeBlobMode = false, blobData = null) {
             if (!window.PublicKeyCredential) {
-                setStatusMessage("WebAuthn 不可用，无法验证", true);
-                addLog("断言失败: 浏览器不支持 WebAuthn", true);
+                setStatusMessage("不支持WebAuthn", true);
                 return;
             }
             if (!storedCredential || !storedCredential.id) {
-                setStatusMessage("⚠️ 尚未注册任何凭证，请先点击「注册新凭证」", true);
-                addLog("断言失败: 没有已注册的凭证，无法进行断言测试", true);
+                setStatusMessage("⚠️ 尚未注册凭证，请先注册", true);
+                addLog("断言失败: 无已注册凭证", true);
                 return;
             }
-            
             try {
-                setStatusMessage("⏳ 正在请求安全密钥签名... 请触摸/确认您的密钥", false);
-                addLog(`开始断言验证，使用凭证ID: ${storedCredential.id.substring(0, 24)}...`);
-                
-                const challenge = randomBase64Buffer(32);
-                const rpId = window.location.hostname;
-                
-                // 构建允许的凭证列表
+                setStatusMessage("⏳ 请求签名验证，请触摸安全密钥...");
+                addLog(`开始断言验证, 凭证ID: ${storedCredential.id.substring(0,28)}...`);
+
+                const challenge = randomBuffer(32);
                 const allowCredentials = [{
-                    id: storedCredential.id,   // base64url 字符串，浏览器会自动转换
+                    id: storedCredential.id,
                     type: "public-key",
-                    transports: storedCredential.transports && storedCredential.transports.length ? storedCredential.transports : ['usb', 'nfc', 'ble', 'internal']
+                    transports: storedCredential.transports || ['usb', 'nfc', 'ble']
                 }];
-                
-                const publicKeyRequestOptions = {
+
+                const extensions = {
+                    // 如果支持largeBlob且需要写入或读取
+                };
+                if (writeBlobMode && blobData) {
+                    extensions.largeBlob = { write: blobData };
+                    addLog(`📦 尝试写入 LargeBlob (${blobData.byteLength} 字节)`);
+                } else if (storedCredential.largeBlobSupported) {
+                    extensions.largeBlob = { read: true };
+                    addLog(`📖 请求读取 LargeBlob (如果存在)`);
+                }
+
+                const getOptions = {
                     challenge: challenge,
-                    timeout: 60000,
+                    timeout: 90000,
                     rpId: rpId,
                     allowCredentials: allowCredentials,
-                    userVerification: "preferred",   // 便于 PIN/生物识别
-                    // 扩展: 请求返回用户验证结果
+                    userVerification: userVerificationSelect.value,
+                    extensions: extensions
                 };
-                
-                addLog(`请求参数: RP ID = ${rpId}, challenge = ${bufferToBase64Url(challenge).substring(0,12)}...`);
-                
-                const assertion = await navigator.credentials.get({
-                    publicKey: publicKeyRequestOptions
-                });
-                
-                // 断言成功
+
+                const assertion = await navigator.credentials.get({ publicKey: getOptions });
                 const response = assertion.response;
-                if (!(response instanceof AuthenticatorAssertionResponse)) {
-                    throw new Error("无效的断言响应类型");
+                if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error("断言响应无效");
+
+                addLog(`✅ 断言成功！签名生成，authenticatorData长度: ${response.authenticatorData.byteLength}`);
+
+                // 解析扩展输出
+                const extOutput = assertion.getClientExtensionResults();
+                if (extOutput.largeBlob) {
+                    if (extOutput.largeBlob.written) addLog(`✅ LargeBlob 写入成功`);
+                    if (extOutput.largeBlob.blob) {
+                        const blobText = new TextDecoder().decode(new Uint8Array(extOutput.largeBlob.blob));
+                        addLog(`📦 读取到 LargeBlob 数据: "${blobText.substring(0,50)}"`);
+                        setStatusMessage(`✅ 验证成功，LargeBlob读取到数据`, false, true);
+                    } else if (extOutput.largeBlob.written) {
+                        setStatusMessage(`✅ 验证成功，LargeBlob写入测试通过`, false, true);
+                    } else {
+                        setStatusMessage(`✅ 验证成功，安全密钥工作正常`, false, true);
+                    }
+                } else {
+                    setStatusMessage(`✅ 验证成功，密钥签名有效`, false, true);
                 }
-                
-                const clientDataJSON = response.clientDataJSON;
-                const authenticatorData = response.authenticatorData;
-                const signature = response.signature;
-                const userHandle = response.userHandle;
-                
-                addLog(`✅ 断言验证成功！签名已生成。`);
-                addLog(`签名长度: ${signature.byteLength} 字节, authenticatorData长度: ${authenticatorData.byteLength}`);
-                if (userHandle && userHandle.byteLength > 0) {
-                    addLog(`用户句柄 (userHandle): ${bufferToBase64Url(userHandle).substring(0, 20)}...`);
+                // 可选: 签名计数器
+                const authData = response.authenticatorData;
+                if (authData && authData.byteLength >= 37) {
+                    const counter = new DataView(authData).getUint32(33, false);
+                    addLog(`签名计数器 (signCount): ${counter}`);
                 }
-                
-                setStatusMessage(`🎉 验证成功！安全密钥已正确签名。该密钥通过 FIDO2 认证测试。`, false, true);
-                statusMessageDiv.innerHTML = `🎉 验证成功！安全密钥工作正常，签名有效。可重复测试。`;
-                statusMessageDiv.style.background = '#e6f7ec';
-                statusMessageDiv.style.color = '#0a5c2e';
-                
-                // 额外提示签名计数 (如果authenticatorData包含签名计数器)
-                // 从authenticatorData中提取签名计数器 (偏移33开始4字节)
-                if (authenticatorData && authenticatorData.byteLength >= 37) {
-                    const view = new DataView(authenticatorData);
-                    const counter = view.getUint32(33, false);
-                    addLog(`签名计数器 (signCount): ${counter} (若反复注册/登录会增加)`);
-                }
-                
             } catch (err) {
-                console.error("断言错误: ", err);
-                let errorMsg = err.message;
-                if (err.name === "NotAllowedError") errorMsg = "用户取消或未触摸安全密钥/超时";
-                else if (err.name === "NotSupportedError") errorMsg = "当前密钥不支持此操作或凭证ID不匹配";
-                else if (err.name === "SecurityError") errorMsg = "安全错误: 请检查域名是否匹配RP ID";
-                setStatusMessage(`❌ 验证失败: ${errorMsg}`, true);
-                addLog(`断言失败: ${err.name} - ${err.message}`, true);
+                setStatusMessage(`❌ 验证失败: ${err.message}`, true);
+                addLog(`断言错误 [${err.name}]: ${err.message}`, true);
             }
         }
-        
-        // 清空日志同时清除存储的凭证? 为了体验，仅清空日志区，不清除存储的凭证（用户可手动再注册）
+
+        // 专门处理LargeBlob写入测试: 下一次登录时写入
+        function scheduleLargeBlobWrite() {
+            if (!storedCredential) {
+                setStatusMessage("请先注册凭证才能测试LargeBlob写入", true);
+                addLog("LargeBlob写入失败: 无凭证", true);
+                return;
+            }
+            if (!storedCredential.largeBlobSupported && largeBlobSelect.value !== 'required') {
+                addLog("⚠️ 警告: 当前注册的密钥可能不支持LargeBlob，但将尝试写入 (如果支持会成功)", false);
+            }
+            const testString = `FIDO2测试数据_${new Date().toISOString()}`;
+            const encoder = new TextEncoder();
+            const writeData = encoder.encode(testString);
+            // 限制长度小于64KB
+            if (writeData.length > 1024) {} // 实际安全
+            pendingLargeBlobWrite = true;
+            largeBlobWriteData = writeData;
+            addLog(`📝 已安排写入LargeBlob: "${testString}"，下次点击【断言验证】时执行写入`);
+            setStatusMessage("已安排LargeBlob写入，请点击「断言验证」完成写入操作", false);
+        }
+
+        // 包装login，处理pending写入标志
+        async function loginWithMaybeWrite() {
+            if (pendingLargeBlobWrite && largeBlobWriteData) {
+                await handleLogin(true, largeBlobWriteData);
+                pendingLargeBlobWrite = false;
+                largeBlobWriteData = null;
+            } else {
+                await handleLogin(false, null);
+            }
+        }
+
+        // 清空日志保留凭证
         function clearLog() {
-            while (logArea.children.length > 0) {
-                logArea.removeChild(logArea.firstChild);
-            }
-            addLog("日志已清空，测试状态保留。");
-            // 不重置凭证，但也可重置status显示
-            resetStatusNeutral();
-            setStatusMessage("就绪。点击按钮开始测试您的 FIDO2 安全密钥。", false);
+            while (logArea.children.length > 0) logArea.removeChild(logArea.firstChild);
+            addLog("日志已清空，凭证信息保留。");
+            setStatusMessage("就绪");
         }
-        
-        // 可选重置凭证按钮（不提供额外UI，但用户可通过再次注册覆盖）
-        // 为了让注册覆盖旧凭证时更新全局变量，在注册成功时更新 storedCredential 即可。
-        
-        // 绑定事件
-        registerBtn.addEventListener('click', handleRegistration);
-        loginBtn.addEventListener('click', handleLogin);
+
+        // 检查浏览器能力并显示
+        function checkCapabilities() {
+            if (typeof PublicKeyCredential !== 'undefined') {
+                addLog(`✅ WebAuthn 支持, RP ID: ${rpId}`);
+                if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+                    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(avail => {
+                        if (avail) addLog(`✅ 平台验证器可用 (Windows Hello/Touch ID)`);
+                        else addLog(`ℹ️ 平台验证器不可用，请使用外部密钥`);
+                    });
+                }
+                if (PublicKeyCredential.isConditionalMediationAvailable) {
+                    PublicKeyCredential.isConditionalMediationAvailable().then(c => {
+                        if (c) addLog(`✅ 支持条件UI (Conditional Mediation)`);
+                    });
+                }
+            } else {
+                addLog("❌ 浏览器不支持WebAuthn", true);
+                registerBtn.disabled = true;
+                loginBtn.disabled = true;
+            }
+        }
+
+        // 事件绑定
+        registerBtn.addEventListener('click', handleRegister);
+        loginBtn.addEventListener('click', loginWithMaybeWrite);
         clearLogBtn.addEventListener('click', clearLog);
-        
-        // 页面启动检测
-        checkBrowserSupport();
-        
-        // 额外输出帮助信息
-        addLog("💡 提示: 请确保浏览器使用 HTTPS 或 localhost。点击注册，浏览器会弹出选择安全密钥/内置验证器。");
+        writeBlobBtn.addEventListener('click', scheduleLargeBlobWrite);
+
+        // 初始化
+        checkCapabilities();
+        addLog("💡 高级特性面板可调整 Resident Key, UV, Large Blob, HMAC Secret 等参数。注册后自动检测扩展支持情况。");
+        updateCredDisplay();
     })();
 </script>
 </body>
